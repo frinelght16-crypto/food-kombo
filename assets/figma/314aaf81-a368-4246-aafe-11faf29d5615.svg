@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="70" height="40" viewBox="0 0 70 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="region-highlight-south">
+<ellipse cx="35" cy="20" rx="35" ry="20" fill="#D4873B" fill-opacity="0.25"/>
+<path d="M35 0.5C44.5941 0.5 53.2556 2.72323 59.501 6.29199C65.7603 9.86883 69.5 14.7341 69.5 20C69.5 25.2659 65.7603 30.1312 59.501 33.708C53.2556 37.2768 44.5941 39.5 35 39.5C25.4059 39.5 16.7444 37.2768 10.499 33.708C4.23968 30.1312 0.5 25.2659 0.5 20C0.5 14.7341 4.23968 9.86883 10.499 6.29199C16.7444 2.72323 25.4059 0.5 35 0.5Z" stroke="#D4873B" stroke-opacity="0.6"/>
+</g>
+</svg>

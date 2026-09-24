@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="pin-pulsing">
+<circle id="Ellipse" opacity="0.2" cx="12" cy="12" r="12" fill="#E8B84B"/>
+<circle id="Ellipse_2" cx="12" cy="12" r="7.25" fill="#D4873A" stroke="white" stroke-width="1.5"/>
+<g id="map-pin" clip-path="url(#clip0_0_8)">
+<path id="Vector" d="M12.2003 15.2667C12.8203 14.7313 14.6664 12.9978 14.6664 11.3333C14.6664 10.626 14.3855 9.94766 13.8854 9.44752C13.3854 8.94738 12.7072 8.6664 12 8.6664C11.2928 8.6664 10.6146 8.94738 10.1146 9.44752C9.61452 9.94766 9.3336 10.626 9.3336 11.3333C9.3336 12.9978 11.1797 14.7313 11.7997 15.2667C11.8574 15.3101 11.9277 15.3336 12 15.3336C12.0723 15.3336 12.1426 15.3101 12.2003 15.2667Z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+</g>
+</g>
+<defs>
+<clipPath id="clip0_0_8">
+<rect width="8" height="8" fill="white" transform="translate(8 8)"/>
+</clipPath>
+</defs>
+</svg>
