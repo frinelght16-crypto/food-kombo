@@ -1,0 +1,112 @@
+@import './figma-motion.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-400.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-500.ttf') format('truetype'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-600.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-700.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-800.ttf') format('truetype'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('../assets/fonts/montserrat-900.ttf') format('truetype'); font-weight: 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Monument Extended'; src: url('../assets/fonts/MonumentExtended-Regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Monument Extended'; src: url('../assets/fonts/MonumentExtended-Ultrabold.otf') format('opentype'); font-weight: 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('../assets/fonts/dm-sans-latin.woff2') format('woff2'); font-weight: 400 800; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Outfit'; src: url('../assets/fonts/outfit-latin.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; background: #090604; }
+body {
+  color: #f5ead6;
+  font-family: 'Montserrat', Arial, sans-serif;
+  overscroll-behavior: none;
+}
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: min(100vw, 402px);
+  height: 100dvh;
+  min-height: 100svh;
+  margin: 0 auto;
+  overflow: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-width: none;
+  background: #140b05;
+}
+#app::-webkit-scrollbar { display: none; }
+.frame-surface {
+  width: var(--design-width);
+  height: var(--design-height);
+  flex: 0 0 auto;
+  position: relative;
+  overflow: hidden;
+  transform-origin: top left;
+}
+.frame-surface > [data-node-id] {
+  background-color: #140b05 !important;
+}
+[class*="font-['Montserrat:"] {
+  font-family: 'Montserrat', Arial, sans-serif !important;
+}
+[class*="font-['Monument_Extended:"] {
+  font-family: 'Monument Extended', 'Montserrat', sans-serif !important;
+  letter-spacing: 0;
+}
+[class*=":Ultrabold"] { font-weight: 800 !important; }
+[class*=":Regular"] { font-weight: 400 !important; }
+[class*="font-['DM_Sans:"] { font-family: 'DM Sans', sans-serif !important; }
+[class*="font-['Outfit:"] { font-family: 'Outfit', sans-serif !important; }
+a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
+#ar-scene {
+  position: absolute !important;
+  z-index: 2 !important;
+  top: 160px !important;
+  left: 48px !important;
+  width: 306px !important;
+  height: 322px !important;
+  overflow: hidden;
+  pointer-events: none;
+  background: #17100a;
+}
+#ar-scene .a-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none;
+}
+.ar-frame-target { border-radius: 12px; }
+.ar-plate {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  filter: drop-shadow(0 12px 24px rgba(0,0,0,.6));
+}
+.camera-note {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 215px;
+  transform: translateX(-50%);
+  width: min(290px, calc(100% - 40px));
+  padding: 10px 13px;
+  border: 1px solid rgba(212,135,58,.7);
+  border-radius: 12px;
+  background: rgba(20,11,5,.88);
+  color: #f5ead6;
+  font: 11px/1.45 'Montserrat', Arial, sans-serif;
+  text-align: center;
+}
+@media (max-width: 402px) {
+  .frame-surface {
+    transform: scale(calc(100vw / var(--design-width)));
+    transform-origin: top center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
