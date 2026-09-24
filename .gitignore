@@ -1,0 +1,8 @@
+node_modules/
+dist/
+work/
+figma-screens.generated.js
+styles.css
+assets/cards/targets/
+.DS_Store
+*.log
