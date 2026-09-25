@@ -83,6 +83,16 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
   pointer-events: none;
   background: transparent;
 }
+.frame-surface > div > video:not(.camera-preview) {
+  position: absolute !important;
+  z-index: 1 !important;
+  top: 160px !important;
+  left: 48px !important;
+  width: 306px !important;
+  height: 322px !important;
+  object-fit: cover !important;
+  background: #17100a;
+}
 .camera-preview {
   position: absolute !important;
   z-index: 1 !important;
