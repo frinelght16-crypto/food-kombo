@@ -54,7 +54,8 @@ body {
 .frame-surface [data-name="Icon-ios-wifi-signal"],
 .frame-surface [data-name="Icon-ios-battery-full"],
 .frame-surface [data-name="timer-badge"],
-.frame-surface [data-name="time-badge"] {
+.frame-surface [data-name="time-badge"],
+.frame-surface [data-name="Live-Timer"] {
   display: none !important;
 }
 .frame-surface > [data-node-id] {
@@ -148,6 +149,69 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
   background: linear-gradient(170deg, #d4873a, #b86828);
   color: #fff8ed;
   font: 700 11px 'Montserrat', Arial, sans-serif;
+}
+.detected-card-reveal {
+  opacity: 0;
+  animation: detected-card-reveal .55s cubic-bezier(.2,.85,.28,1.18) forwards;
+  will-change: opacity, filter;
+}
+@keyframes detected-card-reveal {
+  0% { opacity: 0; filter: blur(5px) brightness(.7); }
+  65% { opacity: 1; filter: blur(0) brightness(1.22); }
+  100% { opacity: 1; filter: blur(0) brightness(1); }
+}
+[data-node-id="1:1251"] {
+  overflow: visible !important;
+}
+.fire-range {
+  appearance: none;
+  -webkit-appearance: slider-vertical;
+  position: absolute;
+  z-index: 5;
+  inset: 0 -18px;
+  width: 52px;
+  height: 160px;
+  margin: 0;
+  opacity: .001;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.fire-knob {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  width: 30px;
+  height: 16px;
+  transform: translateX(-50%);
+  border: 2px solid #fff3de;
+  border-radius: 999px;
+  background: #d4873a;
+  box-shadow: 0 0 0 4px rgba(212,135,58,.2), 0 3px 10px rgba(0,0,0,.45);
+  pointer-events: none;
+}
+[data-node-id="1:1255"] {
+  transform-origin: center bottom;
+  transition: transform .18s ease-out;
+}
+.origin-cta-panel {
+  display: flex;
+  width: 100%;
+  padding: 0 20px 24px;
+}
+.origin-cta-button {
+  width: 100%;
+  min-height: 54px;
+  border: 1px solid rgba(212,135,58,.62);
+  border-radius: 16px;
+  background: linear-gradient(171deg, #d4873a 0%, #b86828 100%);
+  box-shadow: 0 8px 22px rgba(184,104,40,.23);
+  color: #140b05;
+  font: 800 13px/1 'Montserrat', Arial, sans-serif;
+  letter-spacing: .9px;
+  cursor: pointer;
+}
+.origin-cta-button:active {
+  transform: scale(.98);
 }
 @media (max-width: 402px) {
   .frame-surface {
