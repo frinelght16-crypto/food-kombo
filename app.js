@@ -222,7 +222,13 @@
     if (!surface) return;
     const designWidth = Number.parseFloat(surface.style.getPropertyValue('--design-width')) || 402;
     const designHeight = Number.parseFloat(surface.style.getPropertyValue('--design-height')) || 874;
-    const scale = Math.min(1, window.innerWidth / designWidth);
+    const viewportWidth = (document.documentElement && document.documentElement.clientWidth) || window.innerWidth;
+    // Sur mobile, la maquette remplit toute la largeur disponible, quelle que
+    // soit la largeur du téléphone. Sur desktop, on conserve sa taille de
+    // référence pour éviter un agrandissement excessif.
+    const scale = viewportWidth <= 600
+      ? viewportWidth / designWidth
+      : Math.min(1, viewportWidth / designWidth);
     surface.style.transform = 'scale(' + scale + ')';
     surface.style.transformOrigin = 'top center';
     surface.style.height = (designHeight * scale) + 'px';
@@ -362,17 +368,6 @@
     }
     scene.appendChild(assets);
 
-    if (cameraStream) {
-      const video = document.createElement('video');
-      video.className = 'camera-preview';
-      video.autoplay = true;
-      video.muted = true;
-      video.playsInline = true;
-      video.srcObject = cameraStream;
-      root.prepend(video);
-      cameraVideo = video;
-    }
-
     cards.forEach((card, index) => {
       const target = document.createElement('a-entity');
       target.setAttribute('mindar-image-target', 'targetIndex: ' + index);
@@ -454,6 +449,12 @@
       if (!permission) return;
       const fileUrl = await getTargetFile();
       if (current !== (mode === 'scan' ? '06' : '11')) return;
+      // MindAR ouvre son propre flux vidéo pour l’analyse. Libère le flux de
+      // pré-autorisation afin d’éviter deux caméras concurrentes sur mobile.
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
       makeScene(mode, fileUrl);
     } catch (error) {
       console.error('Food Kombo AR:', error);
@@ -501,6 +502,7 @@
   });
 
   window.addEventListener('resize', fitSurface, { passive: true });
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', fitSurface, { passive: true });
 
   app.addEventListener('keydown', event => {
     const target = event.target.closest('[data-route]');
