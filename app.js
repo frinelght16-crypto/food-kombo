@@ -9,13 +9,13 @@
     '16': [390, 844], '17': [390, 844], '18': [390, 844]
   };
   const cards = [
-    { name: 'viande', file: 'assets/cards/targets/viande.png' },
-    { name: 'riz', file: 'assets/cards/targets/riz.png' },
-    { name: 'haricot', file: 'assets/cards/targets/haricot.png' },
-    { name: 'oignon', file: 'assets/cards/targets/oignon.png' },
-    { name: 'tomate', file: 'assets/cards/targets/tomate.png' },
-    { name: 'marmite', file: 'assets/cards/targets/marmite.png' },
-    { name: 'friture', file: 'assets/cards/targets/friture.png' }
+    { name: 'viande', targetIndex: 8 },
+    { name: 'riz', targetIndex: 3 },
+    { name: 'haricot', targetIndex: 2 },
+    { name: 'oignon', targetIndex: 1 },
+    { name: 'tomate', targetIndex: 0 },
+    { name: 'marmite', targetIndex: 4 },
+    { name: 'friture', targetIndex: 10 }
   ];
   const previous = {
     '02': '01', '03': '01', '04': '03', '05': '04', '06': '05', '07': '06',
@@ -313,38 +313,7 @@
   }
 
   async function getTargetFile() {
-    if (targetUrl) return targetUrl;
-    if (compilePromise) return compilePromise;
-    compilePromise = (async () => {
-      try {
-        const stored = await readCompiledTargets();
-        if (stored) {
-          targetUrl = URL.createObjectURL(new Blob([stored], { type: 'application/octet-stream' }));
-          return targetUrl;
-        }
-      } catch (_) {}
-
-      setPrompt('Préparation des sept cartes pour le scanner…');
-      const moduleUrl = 'https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image.prod.js';
-      const { Compiler } = await import(/* @vite-ignore */ moduleUrl);
-      const images = await Promise.all(cards.map(loadCardImage));
-      const compiler = new Compiler();
-      await compiler.compileImageTargets(images, progress => {
-        if (current === '06') setPrompt('Préparation des cartes : ' + Math.round(progress) + ' %');
-      });
-      const data = compiler.exportData();
-      try {
-        await saveCompiledTargets(data);
-      } catch (_) {}
-      targetUrl = URL.createObjectURL(new Blob([data], { type: 'application/octet-stream' }));
-      return targetUrl;
-    })();
-    try {
-      return await compilePromise;
-    } catch (error) {
-      compilePromise = null;
-      throw error;
-    }
+    return 'assets/cards/targets.mind';
   }
 
   function makeScene(mode, fileUrl) {
@@ -354,10 +323,11 @@
     scene.id = 'ar-scene';
     scene.setAttribute('embedded', '');
     scene.setAttribute('mindar-image',
-      'imageTargetSrc: ' + fileUrl + '; autoStart: true; maxTrack: 7; uiLoading: no; uiScanning: no; uiError: no; filterMinCF: 0.001; filterBeta: 1000');
+      'imageTargetSrc: ' + fileUrl + '; autoStart: true; maxTrack: 11; uiLoading: no; uiScanning: no; uiError: no');
+    scene.setAttribute('color-space', 'sRGB');
     scene.setAttribute('vr-mode-ui', 'enabled: false');
     scene.setAttribute('device-orientation-permission-ui', 'enabled: false');
-    scene.setAttribute('renderer', 'colorManagement: true; precision: mediump;');
+    scene.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights: true;');
 
     const assets = document.createElement('a-assets');
     if (mode === 'plate') {
@@ -368,9 +338,14 @@
     }
     scene.appendChild(assets);
 
-    cards.forEach((card, index) => {
+    const camera = document.createElement('a-camera');
+    camera.setAttribute('position', '0 0 0');
+    camera.setAttribute('look-controls', 'enabled: false');
+    scene.appendChild(camera);
+
+    cards.forEach(card => {
       const target = document.createElement('a-entity');
-      target.setAttribute('mindar-image-target', 'targetIndex: ' + index);
+      target.setAttribute('mindar-image-target', 'targetIndex: ' + card.targetIndex);
       target.addEventListener('targetFound', () => {
         if (mode === 'scan') cardFound(card.name);
       });
@@ -476,8 +451,6 @@
       return;
     }
     try {
-      const permission = await requestCameraPermission();
-      if (!permission) return;
       const fileUrl = await getTargetFile();
       if (current !== (mode === 'scan' ? '06' : '11')) return;
       makeScene(mode, fileUrl);
@@ -491,7 +464,6 @@
     const target = event.target.closest('[data-route]');
     if (!target) return false;
     const next = target.dataset.route;
-    if (next === '06' || next === '11') requestCameraPermission();
     if (next === '07' && current === '06') {
       if (foundCards.size >= 5) {
         mount('07', true);
