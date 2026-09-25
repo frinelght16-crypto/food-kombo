@@ -87,6 +87,10 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
   height: 100% !important;
   pointer-events: none;
 }
+#ar-scene .a-enter-vr,
+#ar-scene .a-orientation-modal {
+  display: none !important;
+}
 .ar-frame-target { border-radius: 12px; }
 .ar-plate {
   width: 100%;
