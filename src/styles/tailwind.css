@@ -25,7 +25,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: min(100vw, 402px);
+  width: 100%;
+  max-width: 402px;
   height: 100dvh;
   min-height: 100svh;
   margin: 0 auto;
@@ -41,7 +42,19 @@ body {
   flex: 0 0 auto;
   position: relative;
   overflow: hidden;
-  transform-origin: top left;
+  transform-origin: top center;
+}
+.frame-surface [data-name="status-bar"],
+.frame-surface [data-name="status-icons"],
+.frame-surface [data-name="ios-signal"],
+.frame-surface [data-name="ios-wifi-signal"],
+.frame-surface [data-name="ios-battery-full"],
+.frame-surface [data-name="Icon-ios-signal"],
+.frame-surface [data-name="Icon-ios-wifi-signal"],
+.frame-surface [data-name="Icon-ios-battery-full"],
+.frame-surface [data-name="timer-badge"],
+.frame-surface [data-name="time-badge"] {
+  display: none !important;
 }
 .frame-surface > [data-node-id] {
   background-color: #140b05 !important;
@@ -99,7 +112,6 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
 }
 @media (max-width: 402px) {
   .frame-surface {
-    transform: scale(calc(100vw / var(--design-width)));
     transform-origin: top center;
   }
 }
