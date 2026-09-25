@@ -18,7 +18,7 @@
     { name: 'friture', file: 'assets/cards/friture.png' }
   ];
   const previous = {
-    '02': '01', '03': '02', '04': '02', '05': '04', '06': '05', '07': '06',
+    '02': '01', '03': '01', '04': '03', '05': '04', '06': '05', '07': '06',
     '08': '07', '09': '08', '10': '09', '11': '10', '12': '11',
     '13': '03', '14': '03', '15': '03', '16': '13', '17': '14', '18': '15'
   };
@@ -32,6 +32,7 @@
   let cameraScene = null;
   let cameraMode = null;
   let cameraFailed = false;
+  let cameraPermissionPromise = null;
 
   const cleanText = value => String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('fr');
   const twoDigits = value => String(value).padStart(2, '0');
@@ -117,12 +118,12 @@
     bindBack();
     if (current === '01') return;
     if (current === '02') {
-      bindAction('JOUER', '04');
+      bindAction('JOUER', '03');
       bindAction('CARNET DE RECETTES', '03');
       return;
     }
     if (current === '03') {
-      bindAction('Atassi', '13');
+      bindAction('Atassi', '04');
       bindAction('Amiwo', '14');
       bindAction('Djongoli', '15');
       return;
@@ -190,11 +191,12 @@
     app.dataset.frame = current;
     app.innerHTML = '<div class="frame-surface" data-frame="' + current + '" style="--design-width:' +
       dimensions[0] + 'px;--design-height:' + dimensions[1] + 'px">' + screens[current] + '</div>';
+    fitSurface();
     useProvidedCardArt();
     bindScreenActions();
 
     if (current === '01') {
-      autoAdvanceTimer = window.setTimeout(() => mount('02'), 2200);
+      autoAdvanceTimer = window.setTimeout(() => mount('03'), 2200);
     } else if (current === '06') {
       foundCards.clear();
       cameraFailed = false;
@@ -205,6 +207,42 @@
       cameraFailed = false;
       startCamera('plate');
     }
+  }
+
+  function fitSurface() {
+    const surface = app.firstElementChild;
+    if (!surface) return;
+    const designWidth = Number.parseFloat(surface.style.getPropertyValue('--design-width')) || 402;
+    const designHeight = Number.parseFloat(surface.style.getPropertyValue('--design-height')) || 874;
+    const scale = Math.min(1, window.innerWidth / designWidth);
+    surface.style.transform = 'scale(' + scale + ')';
+    surface.style.transformOrigin = 'top center';
+    surface.style.height = (designHeight * scale) + 'px';
+    surface.style.marginBottom = '0px';
+  }
+
+  function requestCameraPermission() {
+    if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+      cameraFailed = true;
+      showCameraError('Ce navigateur ne permet pas l’accès à la caméra. Ouvre le lien HTTPS dans Safari ou Chrome.');
+      return Promise.resolve(null);
+    }
+    if (!cameraPermissionPromise) {
+      cameraPermissionPromise = navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' } }
+      }).then(stream => {
+        stream.getTracks().forEach(track => track.stop());
+        return true;
+      }).catch(error => {
+        cameraFailed = true;
+        showCameraError(error && error.name === 'NotAllowedError'
+          ? 'Autorise la caméra dans les réglages du navigateur puis réessaie.'
+          : 'La caméra ne démarre pas. Vérifie que le lien est ouvert en HTTPS.');
+        return false;
+      });
+    }
+    return cameraPermissionPromise;
   }
 
   function database() {
@@ -362,9 +400,9 @@
     }
   }
 
-  function showCameraError() {
+  function showCameraError(customMessage) {
     cameraFailed = true;
-    const message = 'La caméra ne démarre pas. Ouvre Food Kombo sur localhost et autorise son accès à la caméra.';
+    const message = customMessage || 'La caméra ne démarre pas. Ouvre Food Kombo en HTTPS et autorise son accès à la caméra.';
     setPrompt(message);
     let note = app.querySelector('.camera-note');
     if (!note && app.firstElementChild) {
@@ -394,6 +432,7 @@
     const target = event.target.closest('[data-route]');
     if (!target) return false;
     const next = target.dataset.route;
+    if (next === '06' || next === '11') requestCameraPermission();
     if (next === '07' && current === '06') {
       if (foundCards.size >= 5) {
         mount('07', true);
@@ -411,7 +450,7 @@
   app.addEventListener('click', event => {
     if (navigateFromEvent(event)) return;
     if (current === '01') {
-      mount('02');
+      mount('03');
       return;
     }
     if (current === '07' && event.target.closest('[data-node-id="1:530"], [data-node-id="1:535"]')) {
@@ -422,6 +461,8 @@
       mount('11');
     }
   });
+
+  window.addEventListener('resize', fitSurface, { passive: true });
 
   app.addEventListener('keydown', event => {
     const target = event.target.closest('[data-route]');
