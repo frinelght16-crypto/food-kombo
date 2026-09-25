@@ -247,11 +247,11 @@
       return;
     }
     if (current === '11') {
-      bindAction('Voir mon carnet', '12');
+      bindAction('Voir mon carnet', '13');
       return;
     }
     if (current === '12') {
-      bindAction('VOIR MON CARNET', '03');
+      bindAction('VOIR MON CARNET', '13');
       return;
     }
     if (current === '13') {
@@ -307,17 +307,19 @@
     if (!surface) return;
     const designWidth = Number.parseFloat(surface.style.getPropertyValue('--design-width')) || 402;
     const designHeight = Number.parseFloat(surface.style.getPropertyValue('--design-height')) || 874;
-    const viewportWidth = (document.documentElement && document.documentElement.clientWidth) || window.innerWidth;
-    // Sur mobile, la maquette remplit toute la largeur disponible, quelle que
-    // soit la largeur du téléphone. Sur desktop, on conserve sa taille de
-    // référence pour éviter un agrandissement excessif.
+    const viewportWidth = (window.visualViewport && window.visualViewport.width) ||
+      (document.documentElement && document.documentElement.clientWidth) || window.innerWidth;
     const scale = viewportWidth <= 600
       ? viewportWidth / designWidth
       : Math.min(1, viewportWidth / designWidth);
+    surface.style.width = designWidth + 'px';
+    surface.style.height = designHeight + 'px';
     surface.style.transform = 'scale(' + scale + ')';
     surface.style.transformOrigin = 'top center';
-    surface.style.height = (designHeight * scale) + 'px';
-    surface.style.marginBottom = '0px';
+    // Une transformation CSS ne modifie pas la place réservée dans la page.
+    // Cette marge compense uniquement l'espace non visible, sans réduire une
+    // deuxième fois le contenu sur les petits écrans.
+    surface.style.marginBottom = (-designHeight * (1 - scale)) + 'px';
   }
 
   function requestCameraPermission() {
