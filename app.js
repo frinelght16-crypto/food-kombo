@@ -106,8 +106,9 @@
 
   function useProvidedCardArt() {
     const root = app.firstElementChild;
+    const detected = Array.from(foundCards);
     const replacement = current === '07'
-      ? ['viande', 'riz', 'haricot', 'friture', 'oignon', 'tomate']
+      ? (detected.length ? detected : ['viande', 'riz', 'haricot', 'friture', 'oignon'])
       : current === '08'
         ? ['riz', 'haricot', 'viande', 'friture', 'oignon', 'marmite']
         : null;
@@ -120,6 +121,90 @@
         image.alt = 'Carte ' + name;
       }
     });
+  }
+
+  function animateDetectedCards() {
+    if (current !== '07') return 0;
+    const detectedCount = Math.max(1, Math.min(foundCards.size || 5, 6));
+    const cardNodes = ['1:558', '1:559', '1:560', '1:561', '1:562', '1:563']
+      .map(id => app.querySelector('[data-node-id="' + id + '"]'))
+      .filter(Boolean);
+    cardNodes.forEach((node, index) => {
+      if (index >= detectedCount) {
+        node.style.display = 'none';
+        return;
+      }
+      node.classList.add('detected-card-reveal');
+      node.style.animationDelay = (index * 1.25) + 's';
+    });
+    const counter = app.querySelector('[data-node-id="1:535"]');
+    if (counter) counter.textContent = detectedCount + '/' + detectedCount;
+    return ((detectedCount - 1) * 1250) + 950;
+  }
+
+  function setupFireControl() {
+    if (current !== '09') return;
+    const track = app.querySelector('[data-node-id="1:1251"]');
+    const fill = app.querySelector('[data-node-id="1:1253"]');
+    const flame = app.querySelector('[data-node-id="1:1255"]');
+    const statusLevel = app.querySelector('[data-node-id="1:1261"]');
+    const statusResult = app.querySelector('[data-node-id="1:1262"]');
+    const badge = app.querySelector('[data-node-id="1:1257"]');
+    if (!track || !fill) return;
+
+    const knob = document.createElement('span');
+    knob.className = 'fire-knob';
+    const slider = document.createElement('input');
+    slider.className = 'fire-range';
+    slider.type = 'range';
+    slider.min = '0';
+    slider.max = '100';
+    slider.value = '62';
+    slider.setAttribute('aria-label', 'Intensité du feu');
+    track.append(knob, slider);
+
+    const update = () => {
+      const value = Number(slider.value);
+      fill.style.height = value + '%';
+      knob.style.bottom = 'calc(' + value + '% - 8px)';
+      if (flame) flame.style.transform = 'scale(' + (0.68 + value * 0.0052) + ')';
+      const level = value < 35 ? 'Doux — ' : value > 75 ? 'Fort — ' : 'Moyen — ';
+      const result = value >= 45 && value <= 72 ? 'Parfait' : value < 45 ? 'Trop faible' : 'Trop fort';
+      const ideal = value >= 45 && value <= 72;
+      if (statusLevel) statusLevel.textContent = level;
+      if (statusResult) {
+        statusResult.textContent = result;
+        statusResult.style.color = ideal ? '#3ed67a' : '#ffbe50';
+      }
+      if (badge) {
+        badge.textContent = ideal ? 'ZONE IDÉALE' : 'AJUSTE LE FEU';
+        const badgeBox = badge.parentElement;
+        if (badgeBox) {
+          badgeBox.style.borderColor = ideal ? '#3ed67a' : '#d4873a';
+          badge.style.color = ideal ? '#3ed67a' : '#ffbe50';
+        }
+      }
+    };
+    slider.addEventListener('input', update, { passive: true });
+    update();
+  }
+
+  function setupOriginButton() {
+    const routes = { '13': '16', '14': '17', '15': '18' };
+    const route = routes[current];
+    if (!route) return;
+    const panel = current === '13'
+      ? app.querySelector('[data-node-id="1:899"]')
+      : app.querySelector('[data-name="Origine Panel"]');
+    if (!panel) return;
+    panel.innerHTML = '';
+    panel.className = 'origin-cta-panel';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'origin-cta-button';
+    button.dataset.route = route;
+    button.textContent = 'VOIR L’ORIGINE';
+    panel.appendChild(button);
   }
 
   function bindScreenActions() {
@@ -170,17 +255,14 @@
       return;
     }
     if (current === '13') {
-      bindAction("Bénin · Afrique de l'Ouest · Cuisine traditionnelle", '16');
       bindAction('Mon carnet de recettes', '03');
       return;
     }
     if (current === '14') {
-      bindAction("Bénin · Afrique de l'Ouest · Tradition Fon", '17');
       bindAction('Mon carnet de recettes', '03');
       return;
     }
     if (current === '15') {
-      bindAction("Bénin · Afrique de l'Ouest · Cuisine Historique", '18');
       bindAction('Mon carnet de recettes', '03');
       return;
     }
@@ -201,6 +283,9 @@
       dimensions[0] + 'px;--design-height:' + dimensions[1] + 'px">' + screens[current] + '</div>';
     fitSurface();
     useProvidedCardArt();
+    const cardAnimationDuration = animateDetectedCards();
+    setupFireControl();
+    setupOriginButton();
     bindScreenActions();
 
     if (current === '01') {
@@ -210,7 +295,7 @@
       cameraFailed = false;
       startCamera('scan');
     } else if (current === '07' && continueAfterDetection) {
-      autoAdvanceTimer = window.setTimeout(() => mount('08'), 1700);
+      autoAdvanceTimer = window.setTimeout(() => mount('08'), cardAnimationDuration + 800);
     } else if (current === '11') {
       cameraFailed = false;
       startCamera('plate');
