@@ -19,8 +19,8 @@
   ];
   const dishes = {
     atassi: { label: 'Atassi', recipe: '13', origin: '16', image: 'assets/meals/atassi-ar.webp', level: 1 },
-    amiwo: { label: 'Amiwo', recipe: '14', origin: '17', image: 'assets/meals/amiwo.jpg', level: 2 },
-    djongoli: { label: 'Djongoli', recipe: '15', origin: '18', image: 'assets/meals/djongoli.jpg', level: 3 }
+    amiwo: { label: 'Amiwo', recipe: '14', origin: '17', image: 'assets/meals/amiwo-ar.png', level: 2 },
+    djongoli: { label: 'Djongoli', recipe: '15', origin: '18', image: 'assets/meals/djongoli-ar.png', level: 3 }
   };
   const previous = {
     '02': '01', '03': '01', '04': '03', '05': '04', '06': '05', '07': '06',
@@ -40,6 +40,11 @@
   let cameraVideo = null;
   let cameraFailed = false;
   let cameraPermissionPromise = null;
+  let audioContext = null;
+  let audioMaster = null;
+  let musicTimer = null;
+  let musicStep = 0;
+  let soundEnabled = localStorage.getItem('food-kombo-sound') !== 'off';
   let activeDishKey = localStorage.getItem('food-kombo-active-dish') || 'atassi';
   if (!dishes[activeDishKey]) activeDishKey = 'atassi';
 
@@ -48,6 +53,106 @@
   const activeDish = () => dishes[activeDishKey];
   const unlockedLevel = () => Math.max(1, Math.min(3,
     Number.parseInt(localStorage.getItem('food-kombo-unlocked-level') || '1', 10) || 1));
+
+  function tone(frequency, duration, type, volume, delay) {
+    if (!soundEnabled || !audioContext || !audioMaster) return;
+    const start = audioContext.currentTime + (delay || 0);
+    const oscillator = audioContext.createOscillator();
+    const gain = audioContext.createGain();
+    oscillator.type = type || 'sine';
+    oscillator.frequency.setValueAtTime(frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume || 0.05, start + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+    oscillator.connect(gain);
+    gain.connect(audioMaster);
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.03);
+  }
+
+  function playSound(kind) {
+    if (!soundEnabled || !audioContext) return;
+    if (kind === 'click') {
+      tone(420, 0.08, 'sine', 0.035);
+    } else if (kind === 'scan') {
+      tone(620, 0.11, 'square', 0.028);
+      tone(820, 0.12, 'sine', 0.025, 0.07);
+    } else if (kind === 'success') {
+      tone(523.25, 0.18, 'sine', 0.045);
+      tone(659.25, 0.18, 'sine', 0.045, 0.12);
+      tone(783.99, 0.28, 'sine', 0.05, 0.24);
+    } else if (kind === 'unlock') {
+      tone(392, 0.16, 'triangle', 0.045);
+      tone(523.25, 0.18, 'triangle', 0.05, 0.11);
+      tone(659.25, 0.3, 'triangle', 0.055, 0.23);
+    }
+  }
+
+  function startMusic() {
+    if (!soundEnabled || musicTimer || !audioContext) return;
+    const notes = [130.81, 164.81, 196, 164.81, 146.83, 174.61, 220, 174.61];
+    musicTimer = window.setInterval(() => {
+      if (document.hidden || !soundEnabled || !audioContext) return;
+      tone(notes[musicStep % notes.length], 0.42, 'triangle', 0.012);
+      if (musicStep % 2 === 0) tone(notes[musicStep % notes.length] * 2, 0.16, 'sine', 0.007, 0.04);
+      musicStep += 1;
+    }, 520);
+  }
+
+  function stopMusic() {
+    if (musicTimer) window.clearInterval(musicTimer);
+    musicTimer = null;
+  }
+
+  function ensureAudio() {
+    if (!soundEnabled) return;
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+      audioContext = new AudioContextClass();
+      audioMaster = audioContext.createGain();
+      audioMaster.gain.value = 0.42;
+      audioMaster.connect(audioContext.destination);
+    }
+    if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
+    startMusic();
+  }
+
+  function setupSoundToggle() {
+    const surface = app.firstElementChild;
+    if (!surface) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'sound-toggle';
+    button.dataset.soundToggle = 'true';
+    button.setAttribute('aria-label', soundEnabled ? 'Couper le son' : 'Activer le son');
+    button.textContent = soundEnabled ? 'SON' : 'MUET';
+    surface.appendChild(button);
+  }
+
+  function setupStartCTA() {
+    if (current !== '01') return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'start-game-cta';
+    button.dataset.route = '03';
+    button.textContent = 'JOUER';
+    app.firstElementChild.appendChild(button);
+  }
+
+  function toggleSound(button) {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('food-kombo-sound', soundEnabled ? 'on' : 'off');
+    button.textContent = soundEnabled ? 'SON' : 'MUET';
+    button.setAttribute('aria-label', soundEnabled ? 'Couper le son' : 'Activer le son');
+    if (soundEnabled) {
+      ensureAudio();
+      playSound('success');
+    } else {
+      stopMusic();
+      if (audioContext && audioContext.state === 'running') audioContext.suspend().catch(() => {});
+    }
+  }
 
   function selectDish(key) {
     if (!dishes[key] || dishes[key].level > unlockedLevel()) return;
@@ -60,6 +165,7 @@
     const nextLevel = Math.min(3, activeDish().level + 1);
     if (nextLevel > unlockedLevel()) {
       localStorage.setItem('food-kombo-unlocked-level', String(nextLevel));
+      playSound('unlock');
     }
   }
 
@@ -399,10 +505,12 @@
     setupOriginButton();
     setupTemperatureCTA();
     setupOriginBackButton();
+    setupSoundToggle();
+    setupStartCTA();
     bindScreenActions();
 
     if (current === '01') {
-      autoAdvanceTimer = window.setTimeout(() => mount('03'), 2200);
+      // L’écran d’accueil reste affiché jusqu’à l’action explicite sur JOUER.
     } else if (current === '06') {
       foundCards.clear();
       cameraFailed = false;
@@ -412,6 +520,7 @@
     } else if (current === '11') {
       cameraFailed = false;
       startCamera('plate');
+      playSound('success');
     }
   }
 
@@ -617,7 +726,9 @@
   }
 
   function cardFound(name) {
+    const wasNew = !foundCards.has(name);
     foundCards.add(name);
+    if (wasNew) playSound('scan');
     window.onCardsDetected(Array.from(foundCards));
     if (foundCards.size >= 5 && current === '06') {
       setPrompt('Cinq cartes repérées. Préparation de la combinaison…');
@@ -697,11 +808,14 @@
   }
 
   app.addEventListener('click', event => {
-    if (navigateFromEvent(event)) return;
-    if (current === '01') {
-      mount('03');
+    const soundButton = event.target.closest('[data-sound-toggle]');
+    if (soundButton) {
+      toggleSound(soundButton);
       return;
     }
+    ensureAudio();
+    playSound('click');
+    if (navigateFromEvent(event)) return;
     if (current === '07' && event.target.closest('[data-node-id="1:530"], [data-node-id="1:535"]')) {
       mount('08');
       return;
