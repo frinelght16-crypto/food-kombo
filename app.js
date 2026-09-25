@@ -31,6 +31,8 @@
   let targetUrl = null;
   let cameraScene = null;
   let cameraMode = null;
+  let cameraStream = null;
+  let cameraVideo = null;
   let cameraFailed = false;
   let cameraPermissionPromise = null;
 
@@ -45,12 +47,18 @@
   }
 
   function destroyCamera() {
-    if (!cameraScene) return;
-    try {
-      const system = cameraScene.systems && cameraScene.systems['mindar-image-system'];
-      if (system && typeof system.stop === 'function') system.stop();
-    } catch (_) {}
-    cameraScene.remove();
+    if (cameraScene) {
+      try {
+        const system = cameraScene.systems && cameraScene.systems['mindar-image-system'];
+        if (system && typeof system.stop === 'function') system.stop();
+      } catch (_) {}
+      cameraScene.remove();
+    }
+    if (cameraVideo) cameraVideo.remove();
+    if (cameraStream) cameraStream.getTracks().forEach(track => track.stop());
+    cameraVideo = null;
+    cameraStream = null;
+    cameraPermissionPromise = null;
     cameraScene = null;
     cameraMode = null;
   }
@@ -232,7 +240,7 @@
         audio: false,
         video: { facingMode: { ideal: 'environment' } }
       }).then(stream => {
-        stream.getTracks().forEach(track => track.stop());
+        cameraStream = stream;
         return true;
       }).catch(error => {
         cameraFailed = true;
@@ -354,6 +362,17 @@
     }
     scene.appendChild(assets);
 
+    if (cameraStream) {
+      const video = document.createElement('video');
+      video.className = 'camera-preview';
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = cameraStream;
+      root.prepend(video);
+      cameraVideo = video;
+    }
+
     cards.forEach((card, index) => {
       const target = document.createElement('a-entity');
       target.setAttribute('mindar-image-target', 'targetIndex: ' + index);
@@ -411,6 +430,18 @@
       app.firstElementChild.appendChild(note);
     }
     if (note) note.textContent = message;
+    if (app.firstElementChild && !app.querySelector('.camera-retry')) {
+      const retry = document.createElement('button');
+      retry.className = 'camera-retry';
+      retry.type = 'button';
+      retry.textContent = 'ACTIVER LA CAMÉRA';
+      retry.addEventListener('click', () => {
+        cameraFailed = false;
+        cameraPermissionPromise = null;
+        requestCameraPermission().then(() => startCamera(cameraMode || 'scan'));
+      });
+      app.firstElementChild.appendChild(retry);
+    }
   }
 
   async function startCamera(mode) {
@@ -419,6 +450,8 @@
       return;
     }
     try {
+      const permission = await requestCameraPermission();
+      if (!permission) return;
       const fileUrl = await getTargetFile();
       if (current !== (mode === 'scan' ? '06' : '11')) return;
       makeScene(mode, fileUrl);
