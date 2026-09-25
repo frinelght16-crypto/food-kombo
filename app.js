@@ -17,6 +17,11 @@
     { name: 'marmite', targetIndex: 4 },
     { name: 'friture', targetIndex: 10 }
   ];
+  const dishes = {
+    atassi: { label: 'Atassi', recipe: '13', origin: '16', image: 'assets/meals/atassi-ar.webp', level: 1 },
+    amiwo: { label: 'Amiwo', recipe: '14', origin: '17', image: 'assets/meals/amiwo.jpg', level: 2 },
+    djongoli: { label: 'Djongoli', recipe: '15', origin: '18', image: 'assets/meals/djongoli.jpg', level: 3 }
+  };
   const previous = {
     '02': '01', '03': '01', '04': '03', '05': '04', '06': '05', '07': '06',
     '08': '07', '09': '08', '10': '09', '11': '10', '12': '11',
@@ -35,9 +40,28 @@
   let cameraVideo = null;
   let cameraFailed = false;
   let cameraPermissionPromise = null;
+  let activeDishKey = localStorage.getItem('food-kombo-active-dish') || 'atassi';
+  if (!dishes[activeDishKey]) activeDishKey = 'atassi';
 
   const cleanText = value => String(value || '').replace(/\s+/g, ' ').trim().toLocaleLowerCase('fr');
   const twoDigits = value => String(value).padStart(2, '0');
+  const activeDish = () => dishes[activeDishKey];
+  const unlockedLevel = () => Math.max(1, Math.min(3,
+    Number.parseInt(localStorage.getItem('food-kombo-unlocked-level') || '1', 10) || 1));
+
+  function selectDish(key) {
+    if (!dishes[key] || dishes[key].level > unlockedLevel()) return;
+    activeDishKey = key;
+    localStorage.setItem('food-kombo-active-dish', key);
+    mount('04');
+  }
+
+  function completeActiveDish() {
+    const nextLevel = Math.min(3, activeDish().level + 1);
+    if (nextLevel > unlockedLevel()) {
+      localStorage.setItem('food-kombo-unlocked-level', String(nextLevel));
+    }
+  }
 
   function setPrompt(message) {
     if (!app.firstElementChild) return;
@@ -98,7 +122,8 @@
     if (!destination) return;
     const arrow = findLabel('←') || findLabel('‹');
     if (!arrow) return;
-    const button = arrow.closest('a') || arrow.closest('[data-name*="Button"]') || arrow;
+    const button = arrow.closest('a') || arrow.closest('[data-name="btn-back"]') ||
+      arrow.closest('[data-name*="Button"]') || arrow.parentElement || arrow;
     button.dataset.route = destination;
     button.setAttribute('role', 'button');
     button.setAttribute('tabindex', '0');
@@ -204,7 +229,92 @@
     button.className = 'origin-cta-button';
     button.dataset.route = route;
     button.textContent = 'VOIR L’ORIGINE';
-    panel.appendChild(button);
+    const mealsButton = document.createElement('button');
+    mealsButton.type = 'button';
+    mealsButton.className = 'meals-home-button';
+    mealsButton.dataset.route = '03';
+    mealsButton.textContent = 'RETOUR AUX REPAS';
+    panel.append(button, mealsButton);
+  }
+
+  function setupTemperatureCTA() {
+    if (current !== '10') return;
+    const content = app.querySelector('[data-node-id="1:646"]');
+    if (content) content.style.bottom = '116px';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'post-fire-cta';
+    button.dataset.route = '11';
+    button.textContent = 'CONTINUER';
+    app.firstElementChild.appendChild(button);
+  }
+
+  function setupOriginBackButton() {
+    if (!['16', '17', '18'].includes(current)) return;
+    const destination = current === '16' ? '13' : current === '17' ? '14' : '15';
+    const headerBack = app.querySelector('[data-name="btn-back"]');
+    if (headerBack) {
+      headerBack.dataset.route = destination;
+      headerBack.setAttribute('role', 'button');
+      headerBack.setAttribute('tabindex', '0');
+    }
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'origin-floating-back';
+    button.dataset.route = destination;
+    button.textContent = '← RETOUR À LA RECETTE';
+    app.firstElementChild.appendChild(button);
+  }
+
+  function personalizeDishScreen() {
+    if (!['04', '05', '06', '07', '08', '09', '10', '11', '12'].includes(current)) return;
+    const label = activeDish().label;
+    const walker = document.createTreeWalker(app.firstElementChild, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    textNodes.forEach(node => {
+      if (/atassi/gi.test(node.nodeValue || '')) node.nodeValue = node.nodeValue.replace(/atassi/gi, label);
+    });
+  }
+
+  function setupMealsProgression() {
+    if (current !== '03') return;
+    const level = unlockedLevel();
+    const definitions = [
+      { key: 'atassi', node: '1:695' },
+      { key: 'amiwo', node: '1:703' },
+      { key: 'djongoli', node: '1:714' }
+    ];
+    const djongoliLabel = app.querySelector('[data-node-id="1:722"]');
+    if (djongoliLabel) djongoliLabel.textContent = 'Djongoli';
+    ['1:724', '1:735', '1:745'].forEach(id => {
+      const card = app.querySelector('[data-node-id="' + id + '"]');
+      if (card) card.style.display = 'none';
+    });
+    definitions.forEach(item => {
+      const card = app.querySelector('[data-node-id="' + item.node + '"]');
+      if (!card) return;
+      const unlocked = dishes[item.key].level <= level;
+      card.classList.toggle('meal-card-unlocked', unlocked);
+      card.classList.toggle('meal-card-locked', !unlocked);
+      if (unlocked) {
+        card.dataset.dish = item.key;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+        const lock = card.querySelector('[data-name="lock-badge"]');
+        if (lock) lock.style.display = 'none';
+        const imageOverlay = card.querySelector('[data-name="food-image"] > div > div');
+        if (imageOverlay) imageOverlay.style.display = 'none';
+      }
+    });
+    const challenge = app.querySelector('[data-node-id="1:756"]');
+    if (challenge) {
+      challenge.textContent = level === 1
+        ? 'Complète l’Atassi pour débloquer l’Amiwo !'
+        : level === 2
+          ? 'Complète l’Amiwo pour débloquer le Djongoli !'
+          : 'Les trois recettes sont débloquées !';
+    }
   }
 
   function bindScreenActions() {
@@ -216,9 +326,6 @@
       return;
     }
     if (current === '03') {
-      bindAction('Atassi', '04');
-      bindAction('Amiwo', '14');
-      bindAction('Djongoli', '15');
       return;
     }
     if (current === '04' || current === '05') {
@@ -242,16 +349,14 @@
       return;
     }
     if (current === '10') {
-      bindAction('Parfait ✓', '11');
-      bindAction('PARFAIT ✓', '11');
       return;
     }
     if (current === '11') {
-      bindAction('Voir mon carnet', '13');
+      bindAction('Voir mon carnet', activeDish().recipe);
       return;
     }
     if (current === '12') {
-      bindAction('VOIR MON CARNET', '13');
+      bindAction('VOIR MON CARNET', activeDish().recipe);
       return;
     }
     if (current === '13') {
@@ -277,15 +382,23 @@
     destroyCamera();
     current = twoDigits(frame);
     if (!screens[current]) current = '01';
+    if (current === '13' || current === '16') activeDishKey = 'atassi';
+    if (current === '14' || current === '17') activeDishKey = 'amiwo';
+    if (current === '15' || current === '18') activeDishKey = 'djongoli';
+    localStorage.setItem('food-kombo-active-dish', activeDishKey);
     const dimensions = sizes[current];
     app.dataset.frame = current;
     app.innerHTML = '<div class="frame-surface" data-frame="' + current + '" style="--design-width:' +
       dimensions[0] + 'px;--design-height:' + dimensions[1] + 'px">' + screens[current] + '</div>';
     fitSurface();
+    personalizeDishScreen();
+    setupMealsProgression();
     useProvidedCardArt();
     const cardAnimationDuration = animateDetectedCards();
     setupFireControl();
     setupOriginButton();
+    setupTemperatureCTA();
+    setupOriginBackButton();
     bindScreenActions();
 
     if (current === '01') {
@@ -420,7 +533,7 @@
     if (mode === 'plate') {
       const meal = document.createElement('img');
       meal.id = 'dish-photo';
-      meal.src = 'assets/meals/atassi.jpg';
+      meal.src = activeDish().image;
       assets.appendChild(meal);
     }
     scene.appendChild(assets);
@@ -436,13 +549,13 @@
       target.addEventListener('targetFound', () => {
         if (mode === 'scan') cardFound(card.name);
       });
-      if (mode === 'plate' && card.name === 'riz') {
+      if (mode === 'plate') {
         const plate = document.createElement('a-plane');
         plate.setAttribute('src', '#dish-photo');
         plate.setAttribute('position', '0 0 0.13');
-        plate.setAttribute('width', '0.88');
-        plate.setAttribute('height', '0.66');
-        plate.setAttribute('material', 'shader: flat; side: double');
+        plate.setAttribute('width', '1');
+        plate.setAttribute('height', '0.68');
+        plate.setAttribute('material', 'shader: flat; side: double; transparent: true; alphaTest: 0.05');
         plate.classList.add('ar-plate');
         target.appendChild(plate);
       }
@@ -450,11 +563,18 @@
     });
 
     root.prepend(scene);
+    if (mode === 'plate') {
+      const preview = document.createElement('div');
+      preview.className = 'ar-dish-preview';
+      preview.innerHTML = '<img src="' + activeDish().image + '" alt="Plat ' + activeDish().label + '">' +
+        '<span>' + activeDish().label + ' en réalité augmentée</span>';
+      root.appendChild(preview);
+    }
     cameraScene = scene;
     cameraMode = mode;
     scene.addEventListener('arReady', () => {
       if (mode === 'scan') setPrompt('Caméra active : présente les cartes une à une dans le cadre.');
-      if (mode === 'plate') setPrompt('Place la carte Riz devant la caméra pour voir l’Atassi.');
+      if (mode === 'plate') setPrompt('Le ' + activeDish().label + ' apparaît sur la caméra. Présente une carte pour l’ancrer.');
     });
     scene.addEventListener('arError', () => {
       showCameraError('Le mode AR a rencontré un problème. La caméra reste disponible en mode aperçu.');
@@ -548,6 +668,11 @@
   }
 
   function navigateFromEvent(event) {
+    const dishCard = event.target.closest('[data-dish]');
+    if (dishCard) {
+      selectDish(dishCard.dataset.dish);
+      return true;
+    }
     const target = event.target.closest('[data-route]');
     if (!target) return false;
     const next = target.dataset.route;
@@ -565,6 +690,7 @@
         setPrompt('Présente cinq cartes différentes pour continuer.');
       }
     } else {
+      if ((current === '11' || current === '12') && next === activeDish().recipe) completeActiveDish();
       mount(next);
     }
     return true;
