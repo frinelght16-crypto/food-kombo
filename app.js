@@ -9,13 +9,13 @@
     '16': [390, 844], '17': [390, 844], '18': [390, 844]
   };
   const cards = [
-    { name: 'viande', file: 'assets/cards/viande.png' },
-    { name: 'riz', file: 'assets/cards/riz.png' },
-    { name: 'haricot', file: 'assets/cards/haricot.png' },
-    { name: 'oignon', file: 'assets/cards/oignon.png' },
-    { name: 'tomate', file: 'assets/cards/tomate.png' },
-    { name: 'marmite', file: 'assets/cards/marmite.png' },
-    { name: 'friture', file: 'assets/cards/friture.png' }
+    { name: 'viande', file: 'assets/cards/targets/viande.png' },
+    { name: 'riz', file: 'assets/cards/targets/riz.png' },
+    { name: 'haricot', file: 'assets/cards/targets/haricot.png' },
+    { name: 'oignon', file: 'assets/cards/targets/oignon.png' },
+    { name: 'tomate', file: 'assets/cards/targets/tomate.png' },
+    { name: 'marmite', file: 'assets/cards/targets/marmite.png' },
+    { name: 'friture', file: 'assets/cards/targets/friture.png' }
   ];
   const previous = {
     '02': '01', '03': '01', '04': '03', '05': '04', '06': '05', '07': '06',
@@ -269,7 +269,7 @@
   async function readCompiledTargets() {
     const db = await database();
     return new Promise((resolve, reject) => {
-      const request = db.transaction('targets', 'readonly').objectStore('targets').get('cards-source-v2');
+      const request = db.transaction('targets', 'readonly').objectStore('targets').get('cards-source-v3');
       request.onsuccess = () => {
         db.close();
         resolve(request.result || null);
@@ -285,7 +285,7 @@
     const db = await database();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction('targets', 'readwrite');
-      transaction.objectStore('targets').put(data, 'cards-source-v2');
+      transaction.objectStore('targets').put(data, 'cards-source-v3');
       transaction.oncomplete = () => {
         db.close();
         resolve();
