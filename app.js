@@ -470,7 +470,12 @@
       if (foundCards.size >= 5) {
         mount('07', true);
       } else if (cameraFailed) {
-        setPrompt('Autorise la caméra puis présente cinq cartes distinctes dans le cadre.');
+        cameraFailed = false;
+        cameraPermissionPromise = null;
+        requestCameraPermission().then(permission => {
+          if (permission && current === '06') startCamera('scan');
+        });
+        setPrompt('Autorise la caméra, puis appuie à nouveau sur « Scanner les cartes ».');
       } else {
         setPrompt('Présente cinq cartes différentes pour continuer.');
       }
