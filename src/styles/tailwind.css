@@ -195,6 +195,8 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
 }
 .origin-cta-panel {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
   width: 100%;
   padding: 0 20px 24px;
 }
@@ -212,6 +214,91 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
 }
 .origin-cta-button:active {
   transform: scale(.98);
+}
+.meals-home-button {
+  width: 100%;
+  min-height: 52px;
+  border: 1px solid rgba(212,135,58,.5);
+  border-radius: 16px;
+  background: rgba(212,135,58,.09);
+  color: #f5ead6;
+  font: 700 12px/1 'Montserrat', Arial, sans-serif;
+  letter-spacing: .7px;
+  cursor: pointer;
+}
+.post-fire-cta {
+  position: absolute;
+  z-index: 12;
+  left: 20px;
+  right: 20px;
+  bottom: 25px;
+  min-height: 56px;
+  border: 0;
+  border-radius: 18px;
+  background: linear-gradient(171deg, #d4873a 0%, #b86828 100%);
+  box-shadow: 0 8px 24px rgba(184,104,40,.34);
+  color: #140b05;
+  font: 800 14px/1 'Montserrat', Arial, sans-serif;
+  letter-spacing: 1px;
+}
+.origin-floating-back {
+  position: absolute;
+  z-index: 12;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  min-height: 50px;
+  border: 1px solid rgba(212,135,58,.55);
+  border-radius: 16px;
+  background: rgba(20,11,5,.94);
+  color: #f5ead6;
+  font: 700 11px/1 'Montserrat', Arial, sans-serif;
+  letter-spacing: .6px;
+}
+.meal-card-unlocked {
+  opacity: 1 !important;
+  cursor: pointer;
+  border-color: rgba(212,135,58,.72) !important;
+  box-shadow: 0 0 18px rgba(212,135,58,.13);
+}
+.meal-card-locked {
+  cursor: not-allowed;
+  filter: grayscale(.45);
+}
+.ar-dish-preview {
+  position: absolute;
+  z-index: 4;
+  top: 160px;
+  left: 48px;
+  width: 306px;
+  height: 322px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(212,135,58,.12), transparent 66%);
+}
+.ar-dish-preview img {
+  width: 270px;
+  height: 230px;
+  object-fit: contain;
+  animation: ar-dish-float 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 16px 18px rgba(0,0,0,.58));
+}
+.ar-dish-preview span {
+  margin-top: 4px;
+  padding: 7px 11px;
+  border: 1px solid rgba(212,135,58,.58);
+  border-radius: 999px;
+  background: rgba(20,11,5,.78);
+  color: #f5ead6;
+  font: 700 9px/1 'Montserrat', Arial, sans-serif;
+  letter-spacing: .3px;
+}
+@keyframes ar-dish-float {
+  0%, 100% { transform: translateY(4px) scale(.97); }
+  50% { transform: translateY(-7px) scale(1.02); }
 }
 @media (max-width: 402px) {
   .frame-surface {
