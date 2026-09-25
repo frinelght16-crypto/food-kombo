@@ -394,13 +394,44 @@
       if (mode === 'scan') setPrompt('Caméra active : présente les cartes une à une dans le cadre.');
       if (mode === 'plate') setPrompt('Place la carte Riz devant la caméra pour voir l’Atassi.');
     });
-    scene.addEventListener('arError', () => showCameraError());
+    scene.addEventListener('arError', () => {
+      showCameraError('Le mode AR a rencontré un problème. La caméra reste disponible en mode aperçu.');
+      showCameraFallback();
+    });
     window.setTimeout(() => {
       if (cameraScene === scene && !cameraFailed && current === (mode === 'scan' ? '06' : '11')) {
-        if (!scene.hasLoaded) showCameraError();
+        if (!scene.hasLoaded) {
+          showCameraError();
+          showCameraFallback();
+        }
       }
     }, 15000);
     return scene;
+  }
+
+  function showCameraFallback() {
+    const root = app.firstElementChild;
+    if (!root || cameraVideo) return;
+    const attach = stream => {
+      cameraStream = stream;
+      const video = document.createElement('video');
+      video.className = 'camera-preview';
+      video.autoplay = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.srcObject = stream;
+      root.prepend(video);
+      cameraVideo = video;
+    };
+    if (cameraStream) {
+      attach(cameraStream);
+      return;
+    }
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' } } })
+        .then(attach)
+        .catch(() => {});
+    }
   }
 
   function cardFound(name) {
@@ -449,12 +480,6 @@
       if (!permission) return;
       const fileUrl = await getTargetFile();
       if (current !== (mode === 'scan' ? '06' : '11')) return;
-      // MindAR ouvre son propre flux vidéo pour l’analyse. Libère le flux de
-      // pré-autorisation afin d’éviter deux caméras concurrentes sur mobile.
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-      }
       makeScene(mode, fileUrl);
     } catch (error) {
       console.error('Food Kombo AR:', error);
