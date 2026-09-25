@@ -20,6 +20,7 @@ body {
   color: #f5ead6;
   font-family: 'Montserrat', Arial, sans-serif;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 #app {
   display: flex;
@@ -80,12 +81,23 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
   height: 322px !important;
   overflow: hidden;
   pointer-events: none;
+  background: transparent;
+}
+.camera-preview {
+  position: absolute !important;
+  z-index: 1 !important;
+  top: 160px !important;
+  left: 48px !important;
+  width: 306px !important;
+  height: 322px !important;
+  object-fit: cover;
   background: #17100a;
 }
 #ar-scene .a-canvas {
   width: 100% !important;
   height: 100% !important;
   pointer-events: none;
+  background: transparent !important;
 }
 #ar-scene .a-enter-vr,
 #ar-scene .a-orientation-modal {
@@ -113,6 +125,19 @@ a[data-node-id], [data-route], [data-origin-route] { cursor: pointer; }
   color: #f5ead6;
   font: 11px/1.45 'Montserrat', Arial, sans-serif;
   text-align: center;
+}
+.camera-retry {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 165px;
+  transform: translateX(-50%);
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  background: linear-gradient(170deg, #d4873a, #b86828);
+  color: #fff8ed;
+  font: 700 11px 'Montserrat', Arial, sans-serif;
 }
 @media (max-width: 402px) {
   .frame-surface {
